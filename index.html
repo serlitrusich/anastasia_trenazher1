@@ -1,0 +1,1467 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Синтаксический разбор — цифровой тренажёр</title>
+  <style>
+    :root {
+      --bg1: #0f1d46;
+      --bg2: #341b73;
+      --card: rgba(255,255,255,.94);
+      --text: #16213e;
+      --muted: #69728a;
+      --blue: #246bfe;
+      --violet: #7a35ff;
+      --green: #1e9e62;
+      --red: #e54343;
+      --yellow: #f7c948;
+      --line-subj: #1256d6;
+      --line-pred: #7a35ff;
+      --line-def: #e18a00;
+      --line-obj: #17965c;
+      --line-adv: #d63384;
+      --shadow: 0 22px 60px rgba(0,0,0,.25);
+      --radius: 24px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      min-height: 100vh;
+      color: #fff;
+      background:
+        radial-gradient(circle at top left, rgba(92, 174, 255, .35), transparent 35%),
+        radial-gradient(circle at bottom right, rgba(156, 94, 255, .38), transparent 38%),
+        linear-gradient(135deg, var(--bg1), var(--bg2));
+      overflow-x: hidden;
+    }
+
+    .app {
+      width: min(1180px, calc(100% - 28px));
+      margin: 0 auto;
+      padding: 26px 0 46px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo {
+      width: 48px;
+      height: 48px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, #46c2ff, #875cff);
+      box-shadow: 0 12px 30px rgba(0,0,0,.22);
+      display: grid;
+      place-items: center;
+      font-weight: 900;
+      font-size: 23px;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: clamp(22px, 3vw, 36px);
+      line-height: 1.05;
+      letter-spacing: -.02em;
+    }
+
+    .brand p {
+      margin: 4px 0 0;
+      opacity: .85;
+      font-size: 14px;
+    }
+
+    .pill {
+      border: 1px solid rgba(255,255,255,.3);
+      background: rgba(255,255,255,.12);
+      color: #fff;
+      padding: 10px 14px;
+      border-radius: 999px;
+      font-weight: 700;
+      backdrop-filter: blur(10px);
+      white-space: nowrap;
+    }
+
+    .screen {
+      display: none;
+      animation: fade .22s ease;
+    }
+
+    .screen.active {
+      display: block;
+    }
+
+    @keyframes fade {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1.15fr .85fr;
+      gap: 22px;
+      align-items: stretch;
+    }
+
+    .card {
+      background: var(--card);
+      color: var(--text);
+      border-radius: var(--radius);
+      padding: clamp(20px, 3vw, 34px);
+      box-shadow: var(--shadow);
+    }
+
+    .hero-title {
+      font-size: clamp(30px, 5vw, 58px);
+      line-height: .98;
+      margin: 0 0 16px;
+      letter-spacing: -.04em;
+    }
+
+    .hero-title span {
+      color: var(--blue);
+    }
+
+    .lead {
+      color: #48536d;
+      line-height: 1.55;
+      font-size: 17px;
+      margin: 0 0 22px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 150px;
+      gap: 12px;
+      margin: 20px 0 18px;
+    }
+
+    input {
+      width: 100%;
+      border: 1px solid #dce2ef;
+      background: #f8faff;
+      border-radius: 16px;
+      padding: 14px 15px;
+      font-size: 16px;
+      outline: none;
+    }
+
+    input:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 4px rgba(36,107,254,.12);
+    }
+
+    .level-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-top: 16px;
+    }
+
+    .level-btn {
+      border: 0;
+      border-radius: 22px;
+      padding: 22px;
+      cursor: pointer;
+      text-align: left;
+      background: linear-gradient(135deg, #edf4ff, #f4efff);
+      color: var(--text);
+      box-shadow: inset 0 0 0 1px rgba(36,107,254,.12);
+      transition: .18s ease;
+    }
+
+    .level-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 16px 32px rgba(36,107,254,.18);
+    }
+
+    .level-btn strong {
+      display: block;
+      font-size: 22px;
+      margin-bottom: 8px;
+    }
+
+    .level-btn small {
+      color: #59647a;
+      font-size: 14px;
+      line-height: 1.4;
+      display: block;
+    }
+
+    .info-card {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .mini {
+      background: rgba(255,255,255,.1);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,.18);
+      border-radius: 22px;
+      padding: 20px;
+      backdrop-filter: blur(8px);
+    }
+
+    .mini h3 {
+      margin: 0 0 10px;
+      font-size: 18px;
+    }
+
+    .mini p, .mini li {
+      margin: 0;
+      color: rgba(255,255,255,.82);
+      line-height: 1.5;
+      font-size: 14px;
+    }
+
+    .mini ul {
+      padding-left: 18px;
+      margin: 0;
+    }
+
+    .theory-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .theory-card h3 {
+      margin: 0 0 10px;
+      color: var(--blue);
+    }
+
+    .theory-card p {
+      color: #4d5870;
+      line-height: 1.55;
+      margin: 0;
+    }
+
+    .actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 22px;
+    }
+
+    button {
+      font-family: inherit;
+    }
+
+    .btn {
+      border: 0;
+      border-radius: 16px;
+      padding: 13px 18px;
+      font-weight: 800;
+      cursor: pointer;
+      color: #fff;
+      background: linear-gradient(135deg, var(--blue), var(--violet));
+      transition: .16s ease;
+      box-shadow: 0 12px 24px rgba(36,107,254,.24);
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .btn.secondary {
+      background: #eef2fb;
+      color: #1f2b46;
+      box-shadow: none;
+    }
+
+    .btn.ghost {
+      background: rgba(255,255,255,.12);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,.25);
+      box-shadow: none;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: 1fr 330px;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .progress-wrap {
+      margin-bottom: 18px;
+      color: #fff;
+    }
+
+    .progress-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      font-weight: 800;
+      margin-bottom: 9px;
+    }
+
+    .bar {
+      height: 11px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: rgba(255,255,255,.18);
+    }
+
+    .bar > div {
+      height: 100%;
+      width: 0;
+      background: linear-gradient(90deg, #49c6ff, #a076ff);
+      border-radius: inherit;
+      transition: width .3s ease;
+    }
+
+    .sentence-card {
+      min-height: 430px;
+    }
+
+    .sentence-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .sentence-title h2 {
+      margin: 0;
+      font-size: 22px;
+    }
+
+    .sentence-title .tag {
+      color: var(--blue);
+      background: #edf4ff;
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-size: 13px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .sentence {
+      font-size: clamp(25px, 3vw, 38px);
+      line-height: 2.05;
+      margin: 22px 0 24px;
+      padding: 20px;
+      background: #f8faff;
+      border: 1px solid #e2e8f4;
+      border-radius: 22px;
+    }
+
+    .word {
+      display: inline-block;
+      margin: 0 3px 8px;
+      padding: 1px 3px 8px;
+      border-radius: 8px;
+      cursor: pointer;
+      position: relative;
+      transition: .12s ease;
+      user-select: none;
+    }
+
+    .word:hover {
+      background: rgba(36,107,254,.1);
+    }
+
+    .word.selectedWord {
+      background: rgba(36,107,254,.18);
+      outline: 2px solid rgba(36,107,254,.22);
+    }
+
+    .word.user-subject {
+      text-decoration-line: underline;
+      text-decoration-style: solid;
+      text-decoration-thickness: 3px;
+      text-decoration-color: var(--line-subj);
+      text-underline-offset: 6px;
+    }
+
+    .word.user-predicate {
+      text-decoration-line: underline;
+      text-decoration-style: double;
+      text-decoration-thickness: 3px;
+      text-decoration-color: var(--line-pred);
+      text-underline-offset: 6px;
+    }
+
+    .word.user-definition {
+      text-decoration-line: underline;
+      text-decoration-style: wavy;
+      text-decoration-thickness: 2px;
+      text-decoration-color: var(--line-def);
+      text-underline-offset: 7px;
+    }
+
+    .word.user-object {
+      text-decoration-line: underline;
+      text-decoration-style: dotted;
+      text-decoration-thickness: 3px;
+      text-decoration-color: var(--line-obj);
+      text-underline-offset: 7px;
+    }
+
+    .word.user-adverbial {
+      text-decoration-line: underline;
+      text-decoration-style: dashed;
+      text-decoration-thickness: 3px;
+      text-decoration-color: var(--line-adv);
+      text-underline-offset: 7px;
+    }
+
+    .word.correct {
+      background: rgba(30,158,98,.16);
+    }
+
+    .word.wrong {
+      background: rgba(229,67,67,.16);
+    }
+
+    .word.missed {
+      background: rgba(247,201,72,.25);
+    }
+
+    .punct {
+      cursor: default;
+      opacity: .75;
+      margin-right: 3px;
+    }
+
+    .hint {
+      color: #5f6a82;
+      line-height: 1.5;
+      font-size: 15px;
+      margin: 0;
+    }
+
+    .panel {
+      position: sticky;
+      top: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .side-card {
+      background: rgba(255,255,255,.94);
+      color: var(--text);
+      border-radius: 22px;
+      padding: 18px;
+      box-shadow: var(--shadow);
+    }
+
+    .side-card h3 {
+      margin: 0 0 12px;
+      font-size: 18px;
+    }
+
+    .choice-grid {
+      display: grid;
+      gap: 8px;
+    }
+
+    .choice {
+      border: 1px solid #dfe6f3;
+      background: #f8faff;
+      color: var(--text);
+      border-radius: 14px;
+      padding: 11px 12px;
+      cursor: pointer;
+      font-weight: 700;
+      text-align: left;
+      transition: .12s ease;
+    }
+
+    .choice:hover {
+      border-color: var(--blue);
+      background: #edf4ff;
+    }
+
+    .choice.active {
+      border-color: var(--blue);
+      background: #e8f0ff;
+      box-shadow: 0 0 0 3px rgba(36,107,254,.10);
+    }
+
+    .choice.danger {
+      color: var(--red);
+    }
+
+    .subchoice-box {
+      display: none;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px dashed #d7deec;
+    }
+
+    .subchoice-box.active {
+      display: block;
+    }
+
+    .legend {
+      display: grid;
+      gap: 10px;
+      font-size: 14px;
+      color: #4e5970;
+    }
+
+    .legend-row {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+
+    .line {
+      width: 40px;
+      height: 10px;
+      border-bottom: 3px solid #000;
+    }
+
+    .line.subj { border-color: var(--line-subj); }
+    .line.pred { border-bottom: 4px double var(--line-pred); }
+    .line.def { border-bottom: 3px wavy var(--line-def); }
+    .line.obj { border-bottom: 4px dotted var(--line-obj); }
+    .line.adv { border-bottom: 4px dashed var(--line-adv); }
+
+    .predicate-select {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .result-box {
+      margin-top: 16px;
+      padding: 16px;
+      border-radius: 18px;
+      background: #f8faff;
+      border: 1px solid #e2e8f4;
+      display: none;
+    }
+
+    .result-box.show {
+      display: block;
+    }
+
+    .result-box h3 {
+      margin: 0 0 8px;
+    }
+
+    .result-box ul {
+      margin: 8px 0 0;
+      padding-left: 20px;
+      color: #4c5770;
+      line-height: 1.45;
+    }
+
+    .result-good { color: var(--green); }
+    .result-bad { color: var(--red); }
+
+    .final-card {
+      text-align: center;
+      max-width: 820px;
+      margin: 0 auto;
+    }
+
+    .score {
+      font-size: clamp(48px, 8vw, 88px);
+      line-height: 1;
+      margin: 18px 0 8px;
+      font-weight: 900;
+      color: var(--blue);
+    }
+
+    .recommendation {
+      background: #f8faff;
+      border-radius: 20px;
+      padding: 18px;
+      color: #4e5970;
+      line-height: 1.55;
+      margin-top: 18px;
+      text-align: left;
+    }
+
+    .copybox {
+      width: 100%;
+      min-height: 130px;
+      border: 1px solid #dfe6f3;
+      background: #f8faff;
+      border-radius: 18px;
+      padding: 14px;
+      margin-top: 14px;
+      color: var(--text);
+      font-family: Arial, Helvetica, sans-serif;
+      resize: vertical;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 22px;
+      transform: translateX(-50%) translateY(100px);
+      background: rgba(16,26,58,.95);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,.18);
+      padding: 12px 16px;
+      border-radius: 999px;
+      box-shadow: 0 18px 40px rgba(0,0,0,.28);
+      transition: .2s ease;
+      z-index: 50;
+      font-weight: 800;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    @media (max-width: 940px) {
+      .hero, .workspace, .theory-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .panel {
+        position: static;
+      }
+
+      .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .pill {
+        white-space: normal;
+      }
+    }
+
+    @media (max-width: 620px) {
+      .level-grid, .form-grid, .predicate-select {
+        grid-template-columns: 1fr;
+      }
+
+      .card, .side-card {
+        border-radius: 20px;
+        padding: 18px;
+      }
+
+      .sentence {
+        font-size: 24px;
+        line-height: 2.1;
+        padding: 14px;
+      }
+
+      .sentence-title {
+        flex-direction: column;
+      }
+
+      .actions .btn, .actions .btn.secondary {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo">С</div>
+        <div>
+          <h1>Синтаксический разбор</h1>
+          <p>Главные и второстепенные члены предложения</p>
+        </div>
+      </div>
+      <div class="pill">Цифровой тренажёр • 6 класс</div>
+    </header>
+
+    <section id="startScreen" class="screen active">
+      <div class="hero">
+        <div class="card">
+          <h2 class="hero-title">Выделяй слова <span>как в тетради</span></h2>
+          <p class="lead">
+            Нажимай на слово, выбирай способ выделения и уточняй вид: согласованное/несогласованное определение,
+            прямое/косвенное дополнение, обстоятельство места, времени, цели и другие.
+          </p>
+
+          <div class="form-grid">
+            <input id="studentName" placeholder="ФИО ученика" />
+            <input id="studentClass" placeholder="Класс" />
+          </div>
+
+          <div class="level-grid">
+            <button class="level-btn" onclick="chooseLevel('basic')">
+              <strong>Базовый уровень</strong>
+              <small>Простые конструкции: основа, определения, дополнения, обстоятельства, ПГС/СИС.</small>
+            </button>
+            <button class="level-btn" onclick="chooseLevel('advanced')">
+              <strong>Повышенный уровень</strong>
+              <small>Составные сказуемые, цельные сочетания, инфинитив, инверсия и сложные случаи.</small>
+            </button>
+          </div>
+        </div>
+
+        <div class="info-card">
+          <div class="mini">
+            <h3>Что нужно сделать?</h3>
+            <ul>
+              <li>Выделить подлежащее и сказуемое.</li>
+              <li>Выделить определения, дополнения и обстоятельства.</li>
+              <li>Указать вид сказуемого: ПГС, СГС, СИС или «нет сказуемого».</li>
+            </ul>
+          </div>
+          <div class="mini">
+            <h3>Важно</h3>
+            <p>Виды односоставных и двусоставных предложений в этом тренажёре не определяются.</p>
+          </div>
+          <div class="mini">
+            <h3>Подсказка</h3>
+            <p>Если член предложения выражен сочетанием слов, отметь каждое слово этого сочетания.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="theoryScreen" class="screen">
+      <div class="card">
+        <h2 class="hero-title" style="font-size:clamp(28px,4vw,46px);">Перед стартом</h2>
+        <p class="lead">Сначала вспомни алгоритм. Потом тренажёр откроет предложения выбранного уровня.</p>
+
+        <div class="theory-grid">
+          <div class="theory-card">
+            <h3>1. Главные члены</h3>
+            <p><b>Подлежащее</b> отвечает на вопросы кто? что? <b>Сказуемое</b> обозначает действие, состояние или признак подлежащего.</p>
+          </div>
+          <div class="theory-card">
+            <h3>2. Виды сказуемого</h3>
+            <p><b>ПГС</b> — один глагол или сложная форма глагола. <b>СГС</b> — вспомогательное слово + инфинитив. <b>СИС</b> — связка + именная часть.</p>
+          </div>
+          <div class="theory-card">
+            <h3>3. Определения</h3>
+            <p><b>Согласованное</b> изменяется вместе с главным словом: жёлтые листья. <b>Несогласованное</b> связано иначе: рассказ учителя, материалы к уроку.</p>
+          </div>
+          <div class="theory-card">
+            <h3>4. Дополнения</h3>
+            <p><b>Прямое</b> чаще всего стоит в винительном падеже без предлога: слушали рассказ. <b>Косвенное</b> — остальные случаи: помочь нам, к экзамену.</p>
+          </div>
+          <div class="theory-card">
+            <h3>5. Обстоятельства</h3>
+            <p>Определи смысл: где? — места; когда? — времени; как? — образа действия; насколько? — меры и степени; почему? — причины; зачем? — цели.</p>
+          </div>
+          <div class="theory-card">
+            <h3>6. Как отвечать</h3>
+            <p>Нажми на слово → выбери член предложения → если нужно, уточни вид. После разбора выбери вид сказуемого и нажми «Проверить».</p>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="btn" onclick="startTraining()">Начать тренировку</button>
+          <button class="btn secondary" onclick="showScreen('startScreen')">Назад к выбору уровня</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="trainingScreen" class="screen">
+      <div class="progress-wrap">
+        <div class="progress-row">
+          <span id="levelLabel">Базовый уровень</span>
+          <span id="progressText">1 из 10</span>
+        </div>
+        <div class="bar"><div id="progressBar"></div></div>
+      </div>
+
+      <div class="workspace">
+        <main class="card sentence-card">
+          <div class="sentence-title">
+            <div>
+              <h2 id="sentenceHeader">Предложение 1</h2>
+              <p class="hint">Нажимай на слова и выбирай нужное выделение. После проверки можно перейти дальше.</p>
+            </div>
+            <div class="tag" id="scoreTag">0 баллов</div>
+          </div>
+
+          <div class="sentence" id="sentenceBox"></div>
+
+          <div>
+            <h3 style="margin-bottom:8px;">Вид сказуемого</h3>
+            <p class="hint">Выбери один вариант для всего предложения.</p>
+            <div class="predicate-select" id="predicateOptions"></div>
+          </div>
+
+          <div id="resultBox" class="result-box"></div>
+
+          <div class="actions">
+            <button class="btn" id="checkBtn" onclick="checkAnswer()">Проверить разбор</button>
+            <button class="btn secondary" id="nextBtn" onclick="nextSentence()" style="display:none;">Следующее предложение</button>
+            <button class="btn secondary" onclick="clearCurrentMarks()">Очистить ответ</button>
+          </div>
+        </main>
+
+        <aside class="panel">
+          <div class="side-card">
+            <h3 id="selectedTitle">Выбери слово</h3>
+            <p class="hint" id="selectedHint">После клика по слову здесь появятся варианты выделения.</p>
+
+            <div class="choice-grid" id="roleChoices" style="margin-top:12px; display:none;">
+              <button class="choice" onclick="setSimpleRole('subject')">Подлежащее</button>
+              <button class="choice" onclick="setSimpleRole('predicate')">Сказуемое</button>
+              <button class="choice" onclick="openSubchoices('definition')">Определение</button>
+              <button class="choice" onclick="openSubchoices('object')">Дополнение</button>
+              <button class="choice" onclick="openSubchoices('adverbial')">Обстоятельство</button>
+              <button class="choice danger" onclick="clearSelectedWord()">Убрать выделение</button>
+            </div>
+
+            <div id="definitionSubs" class="subchoice-box">
+              <h3>Вид определения</h3>
+              <button class="choice" onclick="setRoleWithSubtype('definition','agreed')">Согласованное</button>
+              <button class="choice" onclick="setRoleWithSubtype('definition','unagreed')">Несогласованное</button>
+            </div>
+
+            <div id="objectSubs" class="subchoice-box">
+              <h3>Вид дополнения</h3>
+              <button class="choice" onclick="setRoleWithSubtype('object','direct')">Прямое</button>
+              <button class="choice" onclick="setRoleWithSubtype('object','indirect')">Косвенное</button>
+            </div>
+
+            <div id="adverbialSubs" class="subchoice-box">
+              <h3>Вид обстоятельства</h3>
+              <button class="choice" onclick="setRoleWithSubtype('adverbial','manner')">Образа действия</button>
+              <button class="choice" onclick="setRoleWithSubtype('adverbial','degree')">Меры и степени</button>
+              <button class="choice" onclick="setRoleWithSubtype('adverbial','time')">Времени</button>
+              <button class="choice" onclick="setRoleWithSubtype('adverbial','place')">Места</button>
+              <button class="choice" onclick="setRoleWithSubtype('adverbial','reason')">Причины</button>
+              <button class="choice" onclick="setRoleWithSubtype('adverbial','purpose')">Цели</button>
+            </div>
+          </div>
+
+          <div class="side-card">
+            <h3>Легенда</h3>
+            <div class="legend">
+              <div class="legend-row"><span class="line subj"></span> Подлежащее</div>
+              <div class="legend-row"><span class="line pred"></span> Сказуемое</div>
+              <div class="legend-row"><span class="line def"></span> Определение</div>
+              <div class="legend-row"><span class="line obj"></span> Дополнение</div>
+              <div class="legend-row"><span class="line adv"></span> Обстоятельство</div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section id="finalScreen" class="screen">
+      <div class="card final-card">
+        <h2 class="hero-title" style="font-size:clamp(30px,4vw,50px);">Тренировка завершена</h2>
+        <p class="lead" id="finalInfo">Результат ученика</p>
+        <div class="score" id="finalScore">0%</div>
+        <p id="finalPoints" class="lead"></p>
+        <div class="recommendation" id="recommendation"></div>
+
+        <textarea class="copybox" id="resultText" readonly></textarea>
+
+        <div class="actions" style="justify-content:center;">
+          <button class="btn" onclick="copyResult()">Скопировать результат</button>
+          <button class="btn secondary" onclick="restart()">Пройти ещё раз</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div id="toast" class="toast">Готово</div>
+
+<script>
+const ROLE_LABELS = {
+  subject: 'подлежащее',
+  predicate: 'сказуемое',
+  definition: 'определение',
+  object: 'дополнение',
+  adverbial: 'обстоятельство'
+};
+
+const SUBTYPE_LABELS = {
+  agreed: 'согласованное',
+  unagreed: 'несогласованное',
+  direct: 'прямое',
+  indirect: 'косвенное',
+  manner: 'образа действия',
+  degree: 'меры и степени',
+  time: 'времени',
+  place: 'места',
+  reason: 'причины',
+  purpose: 'цели'
+};
+
+const PRED_LABELS = {
+  'ПГС': 'ПГС',
+  'СГС': 'СГС',
+  'СИС': 'СИС',
+  'НЕТ': 'нет сказуемого'
+};
+
+const R = {
+  subject: (t) => ({t, role:'subject'}),
+  predicate: (t) => ({t, role:'predicate'}),
+  defA: (t) => ({t, role:'definition', subtype:'agreed'}),
+  defU: (t) => ({t, role:'definition', subtype:'unagreed'}),
+  objD: (t) => ({t, role:'object', subtype:'direct'}),
+  objI: (t) => ({t, role:'object', subtype:'indirect'}),
+  advM: (t) => ({t, role:'adverbial', subtype:'manner'}),
+  advDeg: (t) => ({t, role:'adverbial', subtype:'degree'}),
+  advT: (t) => ({t, role:'adverbial', subtype:'time'}),
+  advP: (t) => ({t, role:'adverbial', subtype:'place'}),
+  advR: (t) => ({t, role:'adverbial', subtype:'reason'}),
+  advPurpose: (t) => ({t, role:'adverbial', subtype:'purpose'}),
+  none: (t) => ({t})
+};
+
+const DATA = {
+  basic: {
+    label: 'Базовый уровень',
+    sentences: [
+      {
+        text: 'Осенний ветер стремительно срывал жёлтые листья с деревьев.',
+        predicateType: 'ПГС',
+        tokens: [
+          R.defA('Осенний'), R.subject('ветер'), R.advM('стремительно'), R.predicate('срывал'),
+          R.defA('жёлтые'), R.objD('листья'), R.advP('с'), R.advP('деревьев')
+        ]
+      },
+      {
+        text: 'В густом берёзовом лесу быстро темнело.',
+        predicateType: 'ПГС',
+        tokens: [
+          R.advP('В'), R.defA('густом'), R.defA('берёзовом'), R.advP('лесу'),
+          R.advM('быстро'), R.predicate('темнело')
+        ]
+      },
+      {
+        text: 'На улице сегодня ветрено и очень прохладно.',
+        predicateType: 'СИС',
+        tokens: [
+          R.advP('На'), R.advP('улице'), R.advT('сегодня'), R.predicate('ветрено'),
+          R.none('и'), R.advDeg('очень'), R.predicate('прохладно')
+        ]
+      },
+      {
+        text: 'Из-за туч внезапно появилось долгожданное солнце.',
+        predicateType: 'ПГС',
+        tokens: [
+          R.advP('Из-за'), R.advP('туч'), R.advM('внезапно'), R.predicate('появилось'),
+          R.defA('долгожданное'), R.subject('солнце')
+        ]
+      },
+      {
+        text: 'Вечером мы будем усердно готовиться к предстоящему экзамену.',
+        predicateType: 'ПГС',
+        tokens: [
+          R.advT('Вечером'), R.subject('мы'), R.predicate('будем'), R.advM('усердно'),
+          R.predicate('готовиться'), R.objI('к'), R.defA('предстоящему'), R.objI('экзамену')
+        ]
+      },
+      {
+        text: 'В массивную дубовую дверь громко и настойчиво постучали.',
+        predicateType: 'ПГС',
+        tokens: [
+          R.objI('В'), R.defA('массивную'), R.defA('дубовую'), R.objI('дверь'),
+          R.advM('громко'), R.none('и'), R.advM('настойчиво'), R.predicate('постучали')
+        ]
+      },
+      {
+        text: 'Люблю сильную грозу в самом начале мая!',
+        predicateType: 'ПГС',
+        tokens: [
+          R.predicate('Люблю'), R.defA('сильную'), R.objD('грозу'), R.advT('в'),
+          R.defA('самом'), R.advT('начале'), R.defU('мая')
+        ]
+      },
+      {
+        text: 'На письменном столе аккуратно сложены новые учебники.',
+        predicateType: 'СИС',
+        tokens: [
+          R.advP('На'), R.defA('письменном'), R.advP('столе'), R.advM('аккуратно'),
+          R.predicate('сложены'), R.defA('новые'), R.subject('учебники')
+        ]
+      },
+      {
+        text: 'Чудесное зимнее утро в деревне.',
+        predicateType: 'НЕТ',
+        tokens: [
+          R.defA('Чудесное'), R.defA('зимнее'), R.subject('утро'), R.defU('в'), R.defU('деревне')
+        ]
+      },
+      {
+        text: 'Школьники с огромным интересом слушали рассказ учителя.',
+        predicateType: 'ПГС',
+        tokens: [
+          R.subject('Школьники'), R.advM('с'), R.defA('огромным'), R.advM('интересом'),
+          R.predicate('слушали'), R.objD('рассказ'), R.defU('учителя')
+        ]
+      }
+    ]
+  },
+  advanced: {
+    label: 'Повышенный уровень',
+    sentences: [
+      {
+        text: 'Брат с младшей сестрой отправились на долгую прогулку по парку.',
+        predicateType: 'ПГС',
+        tokens: [
+          R.subject('Брат'), R.subject('с'), R.defA('младшей'), R.subject('сестрой'),
+          R.predicate('отправились'), R.advPurpose('на'), R.defA('долгую'), R.advPurpose('прогулку'),
+          R.defU('по'), R.defU('парку')
+        ]
+      },
+      {
+        text: 'Наш новый знакомый был готов бескорыстно помочь нам в любую минуту.',
+        predicateType: 'СГС',
+        tokens: [
+          R.defA('Наш'), R.defA('новый'), R.subject('знакомый'), R.predicate('был'),
+          R.predicate('готов'), R.advM('бескорыстно'), R.predicate('помочь'), R.objI('нам'),
+          R.advT('в'), R.defA('любую'), R.advT('минуту')
+        ]
+      },
+      {
+        text: 'Весеннее небо казалось мне бескрайним голубым океаном.',
+        predicateType: 'СИС',
+        tokens: [
+          R.defA('Весеннее'), R.subject('небо'), R.predicate('казалось'), R.objI('мне'),
+          R.defA('бескрайним'), R.defA('голубым'), R.predicate('океаном')
+        ]
+      },
+      {
+        text: 'Старому охотнику совершенно не спалось этой тихой звёздной ночью.',
+        predicateType: 'ПГС',
+        tokens: [
+          R.objI('Старому'), R.objI('охотнику'), R.advDeg('совершенно'), R.predicate('не'),
+          R.predicate('спалось'), R.advT('этой'), R.defA('тихой'), R.defA('звёздной'), R.advT('ночью')
+        ]
+      },
+      {
+        text: 'Каждому из присутствующих хотелось хоть немного настоящего чуда.',
+        predicateType: 'ПГС',
+        tokens: [
+          R.objI('Каждому'), R.objI('из'), R.objI('присутствующих'), R.predicate('хотелось'),
+          R.advDeg('хоть'), R.advDeg('немного'), R.defA('настоящего'), R.objI('чуда')
+        ]
+      },
+      {
+        text: 'Два опоздавших студента тихо вошли в просторную аудиторию.',
+        predicateType: 'ПГС',
+        tokens: [
+          R.subject('Два'), R.defA('опоздавших'), R.subject('студента'), R.advM('тихо'),
+          R.predicate('вошли'), R.advP('в'), R.defA('просторную'), R.advP('аудиторию')
+        ]
+      },
+      {
+        text: 'Жить — своей родной стране честно служить!',
+        predicateType: 'СИС',
+        tokens: [
+          R.subject('Жить'), R.none('—'), R.defA('своей'), R.defA('родной'), R.objI('стране'),
+          R.advM('честно'), R.predicate('служить')
+        ]
+      },
+      {
+        text: 'Нас вчера убедительно просили принести дополнительные материалы к уроку.',
+        predicateType: 'ПГС',
+        tokens: [
+          R.objD('Нас'), R.advT('вчера'), R.advM('убедительно'), R.predicate('просили'),
+          R.objI('принести'), R.defA('дополнительные'), R.objD('материалы'), R.defU('к'), R.defU('уроку')
+        ]
+      },
+      {
+        text: 'Искреннее желание учиться всегда поощряется преподавателями.',
+        predicateType: 'ПГС',
+        tokens: [
+          R.defA('Искреннее'), R.subject('желание'), R.defU('учиться'), R.advT('всегда'),
+          R.predicate('поощряется'), R.objI('преподавателями')
+        ]
+      },
+      {
+        text: 'Млечный Путь необычайно ярко сиял на ночном августовском небе.',
+        predicateType: 'ПГС',
+        tokens: [
+          R.subject('Млечный'), R.subject('Путь'), R.advDeg('необычайно'), R.advM('ярко'),
+          R.predicate('сиял'), R.advP('на'), R.defA('ночном'), R.defA('августовском'), R.advP('небе')
+        ]
+      }
+    ]
+  }
+};
+
+let selectedLevel = null;
+let currentIndex = 0;
+let selectedTokenIndex = null;
+let userAnswers = [];
+let selectedPredicateType = null;
+let checked = false;
+let totalPoints = 0;
+let maxPoints = 0;
+let sentenceResults = [];
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function chooseLevel(level) {
+  selectedLevel = level;
+  currentIndex = 0;
+  totalPoints = 0;
+  maxPoints = 0;
+  sentenceResults = [];
+  showScreen('theoryScreen');
+}
+
+function startTraining() {
+  if (!selectedLevel) selectedLevel = 'basic';
+  currentIndex = 0;
+  totalPoints = 0;
+  maxPoints = 0;
+  sentenceResults = [];
+  renderSentence();
+  showScreen('trainingScreen');
+}
+
+function renderSentence() {
+  checked = false;
+  selectedTokenIndex = null;
+  selectedPredicateType = null;
+  const level = DATA[selectedLevel];
+  const sentence = level.sentences[currentIndex];
+  userAnswers = sentence.tokens.map(() => ({}));
+
+  document.getElementById('levelLabel').textContent = level.label;
+  document.getElementById('progressText').textContent = `${currentIndex + 1} из ${level.sentences.length}`;
+  document.getElementById('progressBar').style.width = `${((currentIndex) / level.sentences.length) * 100}%`;
+  document.getElementById('sentenceHeader').textContent = `Предложение ${currentIndex + 1}`;
+  document.getElementById('scoreTag').textContent = `${totalPoints} баллов`;
+
+  const box = document.getElementById('sentenceBox');
+  box.innerHTML = '';
+  sentence.tokens.forEach((tok, idx) => {
+    const span = document.createElement('span');
+    span.className = 'word';
+    span.dataset.index = idx;
+    span.textContent = tok.t;
+    span.onclick = () => selectToken(idx);
+    box.appendChild(span);
+
+    const punct = getPunct(sentence.text, tok.t, idx, sentence.tokens);
+    if (punct) {
+      const p = document.createElement('span');
+      p.className = 'punct';
+      p.textContent = punct;
+      box.appendChild(p);
+    }
+    box.appendChild(document.createTextNode(' '));
+  });
+
+  renderPredicateOptions();
+  resetSidePanel();
+  document.getElementById('resultBox').classList.remove('show');
+  document.getElementById('resultBox').innerHTML = '';
+  document.getElementById('checkBtn').style.display = 'inline-block';
+  document.getElementById('nextBtn').style.display = 'none';
+}
+
+function getPunct(sentenceText, token, idx, tokens) {
+  if (idx !== tokens.length - 1) return '';
+  const m = sentenceText.match(/[.!?]$/);
+  return m ? m[0] : '';
+}
+
+function renderPredicateOptions() {
+  const wrap = document.getElementById('predicateOptions');
+  wrap.innerHTML = '';
+  ['ПГС','СГС','СИС','НЕТ'].forEach(type => {
+    const btn = document.createElement('button');
+    btn.className = 'choice';
+    btn.textContent = PRED_LABELS[type];
+    btn.onclick = () => {
+      selectedPredicateType = type;
+      [...wrap.children].forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    };
+    wrap.appendChild(btn);
+  });
+}
+
+function selectToken(idx) {
+  if (checked) {
+    toast('После проверки ответ менять нельзя');
+    return;
+  }
+  selectedTokenIndex = idx;
+  document.querySelectorAll('.word').forEach(w => w.classList.remove('selectedWord'));
+  const el = document.querySelector(`.word[data-index="${idx}"]`);
+  if (el) el.classList.add('selectedWord');
+
+  const token = DATA[selectedLevel].sentences[currentIndex].tokens[idx];
+  document.getElementById('selectedTitle').textContent = `Слово: «${token.t}»`;
+  document.getElementById('selectedHint').textContent = 'Выбери способ выделения.';
+  document.getElementById('roleChoices').style.display = 'grid';
+  closeSubchoices();
+}
+
+function resetSidePanel() {
+  document.getElementById('selectedTitle').textContent = 'Выбери слово';
+  document.getElementById('selectedHint').textContent = 'После клика по слову здесь появятся варианты выделения.';
+  document.getElementById('roleChoices').style.display = 'none';
+  closeSubchoices();
+}
+
+function closeSubchoices() {
+  ['definitionSubs','objectSubs','adverbialSubs'].forEach(id => {
+    document.getElementById(id).classList.remove('active');
+  });
+}
+
+function openSubchoices(role) {
+  if (selectedTokenIndex === null) return toast('Сначала выбери слово');
+  closeSubchoices();
+  document.getElementById(role + 'Subs').classList.add('active');
+}
+
+function setSimpleRole(role) {
+  if (selectedTokenIndex === null) return toast('Сначала выбери слово');
+  userAnswers[selectedTokenIndex] = {role};
+  updateWordClass(selectedTokenIndex);
+  closeSubchoices();
+  toast('Выделение добавлено');
+}
+
+function setRoleWithSubtype(role, subtype) {
+  if (selectedTokenIndex === null) return toast('Сначала выбери слово');
+  userAnswers[selectedTokenIndex] = {role, subtype};
+  updateWordClass(selectedTokenIndex);
+  closeSubchoices();
+  toast('Выделение добавлено');
+}
+
+function clearSelectedWord() {
+  if (selectedTokenIndex === null) return toast('Сначала выбери слово');
+  userAnswers[selectedTokenIndex] = {};
+  updateWordClass(selectedTokenIndex);
+  closeSubchoices();
+  toast('Выделение убрано');
+}
+
+function clearCurrentMarks() {
+  if (checked) return toast('После проверки очистить нельзя');
+  userAnswers = userAnswers.map(() => ({}));
+  selectedPredicateType = null;
+  document.querySelectorAll('.word').forEach(w => {
+    w.className = 'word';
+  });
+  document.querySelectorAll('#predicateOptions .choice').forEach(b => b.classList.remove('active'));
+  resetSidePanel();
+  toast('Ответ очищен');
+}
+
+function updateWordClass(idx) {
+  const el = document.querySelector(`.word[data-index="${idx}"]`);
+  if (!el) return;
+  const selected = el.classList.contains('selectedWord');
+  el.className = 'word' + (selected ? ' selectedWord' : '');
+  const ans = userAnswers[idx];
+  if (ans.role) el.classList.add('user-' + ans.role);
+}
+
+function checkAnswer() {
+  if (!selectedPredicateType) {
+    toast('Выбери вид сказуемого');
+    return;
+  }
+
+  const sentence = DATA[selectedLevel].sentences[currentIndex];
+  let points = 0;
+  let possible = 0;
+  let roleRight = 0;
+  let roleTotal = 0;
+  let details = [];
+
+  document.querySelectorAll('.word').forEach(w => {
+    w.classList.remove('correct','wrong','missed');
+  });
+
+  sentence.tokens.forEach((tok, idx) => {
+    const ans = userAnswers[idx] || {};
+    const el = document.querySelector(`.word[data-index="${idx}"]`);
+    const expectedHasRole = Boolean(tok.role);
+    const userHasRole = Boolean(ans.role);
+
+    if (expectedHasRole) {
+      roleTotal += 1;
+      possible += 1;
+      if (ans.role === tok.role) {
+        points += 1;
+        roleRight += 1;
+      }
+
+      if (needsSubtype(tok.role)) {
+        possible += 1;
+        if (ans.role === tok.role && ans.subtype === tok.subtype) {
+          points += 1;
+        }
+      }
+
+      if (ans.role === tok.role && (!needsSubtype(tok.role) || ans.subtype === tok.subtype)) {
+        el.classList.add('correct');
+      } else if (!userHasRole) {
+        el.classList.add('missed');
+        details.push(`Пропущено: «${tok.t}» — ${formatExpected(tok)}.`);
+      } else {
+        el.classList.add('wrong');
+        details.push(`«${tok.t}»: выбрано ${formatAnswer(ans)}, нужно ${formatExpected(tok)}.`);
+      }
+    } else if (userHasRole) {
+      possible += 1;
+      el.classList.add('wrong');
+      details.push(`«${tok.t}» не нужно выделять как член предложения.`);
+    }
+  });
+
+  possible += 1;
+  if (selectedPredicateType === sentence.predicateType) {
+    points += 1;
+  } else {
+    details.push(`Вид сказуемого: выбрано «${PRED_LABELS[selectedPredicateType]}», нужно «${PRED_LABELS[sentence.predicateType]}».`);
+  }
+
+  const percent = possible ? Math.round(points / possible * 100) : 0;
+  totalPoints += points;
+  maxPoints += possible;
+  sentenceResults.push({points, possible, percent});
+
+  checked = true;
+  document.getElementById('scoreTag').textContent = `${totalPoints} баллов`;
+
+  const box = document.getElementById('resultBox');
+  box.classList.add('show');
+  if (details.length === 0) {
+    box.innerHTML = `<h3 class="result-good">Отлично! Разбор выполнен верно.</h3>
+      <p class="hint">Баллы за предложение: ${points} из ${possible}.</p>`;
+  } else {
+    box.innerHTML = `<h3 class="${percent >= 70 ? 'result-good' : 'result-bad'}">Результат: ${points} из ${possible} (${percent}%)</h3>
+      <p class="hint">Посмотри, что нужно исправить:</p>
+      <ul>${details.slice(0, 9).map(d => `<li>${d}</li>`).join('')}${details.length > 9 ? '<li>Есть ещё ошибки. Сравни выделение с подсветкой.</li>' : ''}</ul>`;
+  }
+
+  document.getElementById('checkBtn').style.display = 'none';
+  document.getElementById('nextBtn').style.display = 'inline-block';
+  document.getElementById('progressBar').style.width = `${((currentIndex + 1) / DATA[selectedLevel].sentences.length) * 100}%`;
+}
+
+function needsSubtype(role) {
+  return ['definition','object','adverbial'].includes(role);
+}
+
+function formatExpected(tok) {
+  if (!tok.role) return 'не выделяется';
+  if (needsSubtype(tok.role)) {
+    return `${ROLE_LABELS[tok.role]}: ${SUBTYPE_LABELS[tok.subtype]}`;
+  }
+  return ROLE_LABELS[tok.role];
+}
+
+function formatAnswer(ans) {
+  if (!ans || !ans.role) return 'ничего';
+  if (needsSubtype(ans.role)) {
+    return `${ROLE_LABELS[ans.role]}${ans.subtype ? ': ' + SUBTYPE_LABELS[ans.subtype] : ''}`;
+  }
+  return ROLE_LABELS[ans.role];
+}
+
+function nextSentence() {
+  if (currentIndex < DATA[selectedLevel].sentences.length - 1) {
+    currentIndex += 1;
+    renderSentence();
+  } else {
+    finish();
+  }
+}
+
+function finish() {
+  const percent = maxPoints ? Math.round(totalPoints / maxPoints * 100) : 0;
+  const name = document.getElementById('studentName').value.trim() || 'Ученик';
+  const klass = document.getElementById('studentClass').value.trim() || 'класс не указан';
+  const levelLabel = DATA[selectedLevel].label;
+
+  document.getElementById('finalInfo').textContent = `${name}, ${klass} • ${levelLabel}`;
+  document.getElementById('finalScore').textContent = `${percent}%`;
+  document.getElementById('finalPoints').textContent = `${totalPoints} из ${maxPoints} баллов`;
+
+  let rec = '';
+  if (percent >= 90) {
+    rec = '<b>Отличный результат.</b> Ученик уверенно выделяет члены предложения и различает их виды. Можно переходить к сложным предложениям и заданиям ОГЭ.';
+  } else if (percent >= 75) {
+    rec = '<b>Хороший результат.</b> База есть. Нужно точечно повторить виды второстепенных членов, особенно дополнения и обстоятельства.';
+  } else if (percent >= 55) {
+    rec = '<b>Средний результат.</b> Рекомендуется повторить алгоритм: сначала грамматическая основа, потом вопросы к второстепенным членам.';
+  } else {
+    rec = '<b>Нужно повторение.</b> Лучше пройти уровень ещё раз и отдельно разобрать определения, дополнения и обстоятельства по вопросам.';
+  }
+  document.getElementById('recommendation').innerHTML = rec;
+
+  const date = new Date().toLocaleString('ru-RU');
+  const text = [
+    'Результат цифрового тренажёра по синтаксису',
+    `Дата: ${date}`,
+    `ФИО: ${name}`,
+    `Класс: ${klass}`,
+    `Уровень: ${levelLabel}`,
+    `Баллы: ${totalPoints} из ${maxPoints}`,
+    `Процент: ${percent}%`,
+    `Рекомендация: ${stripHtml(rec)}`
+  ].join('\n');
+  document.getElementById('resultText').value = text;
+
+  showScreen('finalScreen');
+}
+
+function stripHtml(html) {
+  const div = document.createElement('div');
+  div.innerHTML = html;
+  return div.textContent || div.innerText || '';
+}
+
+function copyResult() {
+  const ta = document.getElementById('resultText');
+  ta.select();
+  document.execCommand('copy');
+  toast('Результат скопирован');
+}
+
+function restart() {
+  selectedLevel = null;
+  currentIndex = 0;
+  selectedTokenIndex = null;
+  userAnswers = [];
+  selectedPredicateType = null;
+  checked = false;
+  totalPoints = 0;
+  maxPoints = 0;
+  sentenceResults = [];
+  showScreen('startScreen');
+}
+
+function toast(text) {
+  const t = document.getElementById('toast');
+  t.textContent = text;
+  t.classList.add('show');
+  clearTimeout(window.__toastTimer);
+  window.__toastTimer = setTimeout(() => t.classList.remove('show'), 1600);
+}
+</script>
+</body>
+</html>
